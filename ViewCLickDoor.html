@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" src="./lc.min.js"></script>
+    <script type="text/javascript" src="./jquery-latest.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <script>
+        const appId = "tzlEK4yAD7Ec5ROaftB2UaMv-gzGzoHsz";
+        const appKey = "KVOFaQ2DiILzIUoQVbCIIgVn";
+        const serverURL = "https://OLoj899I.lc-cn-n1-shared.com";
+        const context = {
+            products: [],
+        };
+
+        function getReleaseTime(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            return `${year}/${month}/${day}`;
+        }
+
+        function setupData() {
+            LC.init({ appId, appKey, serverURL });
+            // LeanCloud - 查询
+            // https://leancloud.cn/docs/leanstorage_guide-js.html#hash860317
+            LC.CLASS("Product")
+                .include("owner", "image")
+                .orderBy("createdAt", "desc")
+                .find()
+                .then((products) => {
+                    products.forEach((product) => {
+                        const owner = product.data.owner;
+                        const productImage = product.data.image;
+
+                        // handlebars context
+                        context.products.push({
+                            productImageUrl: productImage ? productImage.url : "./../storage.png",
+                            productTitle: product.data.title,
+                            productDescription: product.data.description,
+                            price: product.data.price,
+                            ownerUsername: owner ? owner.data.username : "unknown",
+                            releaseTime: getReleaseTime(product.createdAt),
+                        });
+                    });
+
+                    // use handlebars to update html
+                    const source = $("#products-list").html();
+                    const template = Handlebars.compile(source);
+                    const html = template(context);
+                    $(".products-detail").html(html);
+                })
+                .catch((error) => alert(error.error));
+        }
+        window.onload = function () {
+            setupData();
+        }
+
+    </script>
+</head>
+<body>
+<div class="row products-detail">
+    <!-- Products list content -->
+    <script id="products-list" type="text/x-handlebars-template">
+        {{#each products}}
+            <div class="col-sm-6 col-md-4 product-detail">
+                <div class="thumbnail">
+                    <div class="caption">
+                        <h3>{{{productTitle}}}</h3>
+                        <p >最佳点击次数：<span style="color: rgb(255, 0,0)">{{{price}}}</span></p>
+                        <p>完成时间：{{{releaseTime}}}</p>
+                    </div>
+                </div>
+            </div>
+        {{/each}}
+    </script>
+</div>
+</body>
+</html>
